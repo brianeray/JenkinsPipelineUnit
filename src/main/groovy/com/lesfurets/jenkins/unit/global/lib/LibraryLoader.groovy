@@ -95,6 +95,15 @@ class LibraryLoader {
                 groovyClassLoader.addURL(varsPath.toUri().toURL())
                 groovyClassLoader.addURL(resourcesPath.toUri().toURL())
 
+                // pre-load library classes using JPU groovy class loader
+                if (srcPath.toFile().exists()) {
+                    srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->
+                        if (srcFile.name.endsWith(".groovy")) {
+                            Class clazz = groovyClassLoader.parseClass(srcFile)
+                            groovyClassLoader.loadClass(clazz.name)
+                        }
+                    }
+                }
                 if (varsPath.toFile().exists()) {
                     def ds = Files.list(varsPath)
                     ds.map { it.toFile() }
@@ -109,15 +118,6 @@ class LibraryLoader {
                       } as Consumer<String>)
                     // prevent fd leak on the DirectoryStream from Files.list()
                     ds.close()
-                }
-                // pre-load library classes using JPU groovy class loader
-                if (srcPath.toFile().exists()) {
-                    srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->
-                        if (srcFile.name.endsWith(".groovy")) {
-                            Class clazz = groovyClassLoader.parseClass(srcFile)
-                            groovyClassLoader.loadClass(clazz.name)
-                        }
-                    }
                 }
             }
             record.definedGlobalVars = globalVars

@@ -378,5 +378,31 @@ class TestInterceptingGCL extends BasePipelineTest {
         assertCallStack().contains("""test_annotation.sh(echo 'ClassB: I'm field of B')""")
     }
 
+    /**
+    * 1. Load library by annotation, with implicity
+    * 2. Create instance of library class
+    * 3. Call a vars step that accepts that type as an argument, passing that instance
+    * 4. Make sure interception of pipeline methods works propertly
+    */
+    @Test
+    void test_cross_class_as_var_arg_implicit_annotation() throws Exception {
+        //This does not factor in the current test but does replicate the use 
+        //case in which the lazy load feature originated.
+        helper.cloneArgsOnMethodCallRegistration = false
 
+        final library = library().name("test_cross_class_usage")
+                        .defaultVersion("master")
+                        .allowOverride(false)
+                        .implicit(true)
+                        .targetPath(sharedLibCls)
+                        .retriever(projectSource(sharedLibCls))
+                        .build()
+        helper.registerSharedLibrary(library)
+
+        final pipeline = "test_var_with_lib_class_arg_annotation"
+        runScript("job/library/cross_class_pre_loaded/${pipeline}.jenkins")
+        printCallStack()
+        assertCallStack().contains("""${pipeline}.monster1(org.test.Monster1""")
+        assertCallStack().contains("""monster1.echo(Dracula makes quite a scary monster)""")
+    }
 }
