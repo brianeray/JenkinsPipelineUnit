@@ -379,7 +379,7 @@ class TestInterceptingGCL extends BasePipelineTest {
     }
 
     /**
-    * 1. Load library by annotation, with implicity
+    * 1. Load two libraries--one dependent on the other--by annotation with implicity
     * 2. Create instance of library class
     * 3. Call a vars step that accepts that type as an argument, passing that instance
     * 4. Make sure interception of pipeline methods works propertly
@@ -390,19 +390,29 @@ class TestInterceptingGCL extends BasePipelineTest {
         //case in which the lazy load feature originated.
         helper.cloneArgsOnMethodCallRegistration = false
 
-        final library = library().name("test_cross_class_usage")
-                        .defaultVersion("master")
-                        .allowOverride(false)
-                        .implicit(true)
-                        .targetPath(sharedLibCls)
-                        .retriever(projectSource(sharedLibCls))
-                        .build()
-        helper.registerSharedLibrary(library)
+        //test_cross_class_as_var_arg_1 uses vars and classes in 
+        //test_cross_class_as_var_arg_2 so the latter has to be loaded first
+        [
+            "test_cross_class_as_var_arg_2",
+            "test_cross_class_as_var_arg_1",
+        ].each { libName ->
+            final libDir = this.class.getResource("/libs/$libName").file
+            final library = library().name(libName)
+                                     .defaultVersion("master")
+                                     .allowOverride(false)
+                                     .implicit(true)
+                                     .targetPath(libDir)
+                                     .retriever(projectSource(libDir))
+                                     .build()
+            helper.registerSharedLibrary(library)
+        }
 
         final pipeline = "test_var_with_lib_class_arg_annotation"
         runScript("job/library/cross_class_pre_loaded/${pipeline}.jenkins")
         printCallStack()
-        assertCallStack().contains("""${pipeline}.monster1(org.test.Monster1""")
-        assertCallStack().contains("""monster1.echo(Dracula makes quite a scary monster)""")
+        assertCallStackContains("""${pipeline}.monster1(org.test.Monster1""")
+        assertCallStackContains("""monster1.monster2(org.test.Monster2""")
+        assertCallStackContains("""monster2.echo(Frankenstein's Monster all by itself is frightening)""")
+        assertCallStackContains("""monster1.echo(Dracula and Frankenstein's Monster make quite a scary team)""")
     }
 }

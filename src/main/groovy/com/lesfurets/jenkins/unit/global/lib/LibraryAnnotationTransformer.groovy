@@ -38,6 +38,9 @@ class LibraryAnnotationTransformer extends CompilationCustomizer {
 
         // load implicit libraries
         try {
+            //FIXME kill debug after troubleshoot
+            println "\nCICD-159 LibraryAnnotationTransformer.call loading implicit libraries for annotation"
+            println "CICD-159 LibraryAnnotationTransformer.call classNode=$classNode"
             libraryLoader.loadImplicitLibraries()
         } catch (Exception e) {
             source.addException(e)

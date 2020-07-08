@@ -429,6 +429,19 @@ class PipelineTestHelper {
                 script.metaClass.getMethods().findAll { it.name == 'call' }.forEach { m ->
                     this.registerAllowedMethod(method(e.value.class.name, m.getNativeParameterTypes()),
                                     { args -> m.doMethodInvoke(e.value, args) })
+                    //FIXME kill debug logging after troubleshooting
+                    final stepVar = e.value.class.name
+                    if (stepVar.startsWith("monster")) {
+                        final nativeParamTypes = m.nativeParameterTypes
+                        final cachedParamClasses = nativeParamTypes*.name.collect {
+                            libLoader.groovyClassLoader.getClassCacheEntry(it) ?: it
+                        } as Class[]
+                        println "\nCICD-159 PipelineTestHelper.setGlobalVars ${stepVar}.call.nativeParameterTypes=$nativeParamTypes"
+                        println "CICD-159 PipelineTestHelper.setGlobalVars nativeParameterTypes*.hashCode()=${nativeParamTypes*.hashCode()}"
+                        println "CICD-159 PipelineTestHelper.setGlobalVars cachedParamClasses=$cachedParamClasses"
+                        println "CICD-159 PTH.setGlobalVars cachedParamClasses*.hashCode()=${cachedParamClasses*.hashCode()}"
+                    }
+                    //FIXME </end>
                 }
             }
             binding.setVariable(e.key, e.value)

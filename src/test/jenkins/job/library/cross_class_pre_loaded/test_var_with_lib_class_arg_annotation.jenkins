@@ -1,5 +1,8 @@
-//Commenting the annotation appears to make no difference when load is implicit
-@Library("test_cross_class_usage")
+//Commenting the annotations appears to make no difference when load is implicit
+//FIXME let's try implicit loading only
+//@Library("test_cross_class_as_var_arg_2")
+import org.test.extra.Monster2
+//@Library("test_cross_class_as_var_arg_1")
 import org.test.Monster1
 
 vampire = new Monster1("Dracula")

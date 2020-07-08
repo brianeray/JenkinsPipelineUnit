@@ -79,13 +79,18 @@ class LibraryLoader {
      * @throws Exception
      */
     private void doLoadLibrary(LibraryConfiguration library, String version = null) throws Exception {
-        println "Loading shared library ${library.name} with version ${version ?: library.defaultVersion}"
+        //FIXME kill leading newline after troubleshoot
+        println "\nLoading shared library ${library.name} with version ${version ?: library.defaultVersion}"
         try {
             def urls = library.retriever.retrieve(library.name, version ?: library.defaultVersion, library.targetPath)
             def record = new LibraryRecord(library, version ?: library.defaultVersion, urls.path)
             libRecords.put(record.getIdentifier(), record)
+            //FIXME kill debug logging after troubleshooting
+            println "CICD-159 LibraryLoader.doLoadLibrary urls=$urls"
             def globalVars = [:]
             urls.forEach { URL url ->
+                //FIXME kill debug logging after troubleshooting
+                println "CICD-159 LibraryLoader.doLoadLibrary url=$url"
                 def file = new File(url.toURI())
 
                 def srcPath = file.toPath().resolve('src')
@@ -96,11 +101,28 @@ class LibraryLoader {
                 groovyClassLoader.addURL(resourcesPath.toUri().toURL())
 
                 // pre-load library classes using JPU groovy class loader
+                //FIXME kill debug logging after troubleshooting
+                final srcPathFl = srcPath.toFile()
+                println "CICD-159 LibraryLoader.doLoadLibrary $srcPathFl exists?=${srcPathFl.exists()}"
+                //FIXME </end>
                 if (srcPath.toFile().exists()) {
-                    srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->
+                    srcPath.toFile().eachFileRecurse(FILES) { File srcFile ->
+                        //FIXME kill debug logging after troubleshooting
+                        println "CICD-159 LibraryLoader.doLoadLibrary srcFile=$srcFile"
+                        println "CICD-159 LibraryLoader.doLoadLibrary srcFile.name ends with [.groovy]=${srcFile.name.endsWith('.groovy')}"
+                        //FIXME </end>
                         if (srcFile.name.endsWith(".groovy")) {
+                            //FIXME kill debug logging after troubleshooting
+                            println "CICD-159 LibraryLoader.doLoadLibrary We're in the .groovy classload logic"
                             Class clazz = groovyClassLoader.parseClass(srcFile)
-                            groovyClassLoader.loadClass(clazz.name)
+                            println "CICD-159 LibraryLoader.doLoadLibrary We just parsed the class"
+                            final shortSrcFile = srcFile.toString().replaceFirst(/.+?libs/, '...')
+                            println "CICD-159 LibraryLoader.doLoadLibrary $clazz parsed from $shortSrcFile"
+                            println "CICD-159 LibraryLoader.doLoadLibrary clazz.hashCode()=${clazz.hashCode()}"
+                            Class loadedClazz = groovyClassLoader.loadClass(clazz.name)
+                            println "CICD-159 LibraryLoader.doLoadLibrary $loadedClazz loaded"
+                            println "CICD-159 LibraryLoader.doLoadLibrary loadedClazz.hashCode()=${loadedClazz.hashCode()}"
+                            //FIXME </end>
                         }
                     }
                 }
@@ -111,7 +133,13 @@ class LibraryLoader {
                       .map { FilenameUtils.getBaseName(it.name) }
                       .filter ({String it -> !globalVars.containsValue(it) } as Predicate<String>)
                       .forEach ({ String it ->
+                          //FIXME kill debug logging after troubleshooting
+                          println "CICD-159 LibraryLoader.doLoadLibrary We're in the .groovy vars/ classload logic"
                           def clazz = groovyClassLoader.loadClass(it)
+                          //FIXME kill debug logging after troubleshooting
+                          println "CICD-159 LibraryLoader.doLoadLibrary vars/$clazz loaded"
+                          println "CICD-159 LibraryLoader.doLoadLibrary vars/clazz.hashCode()=${clazz.hashCode()}"
+                          //FIXME </end>
                           // instantiate by invokeConstructor to avoid interception
                           Object var = DefaultGroovyMethods.newInstance(clazz)
                           globalVars.put(it, var)
@@ -122,6 +150,8 @@ class LibraryLoader {
             }
             record.definedGlobalVars = globalVars
         } catch (Exception e) {
+            //FIXME kill debug logging after troubleshooting
+            println "CICD-159 LibraryLoader.doLoadLibrary exception caught: $e"
             throw new LibraryLoadingException(e, library, version)
         }
     }
